@@ -36,6 +36,15 @@ const HELP_TEXT = `🤖 *Kei-bot* — bantu koordinasi kelompok tugas kuliah
 /rangkum [jumlah_pesan]
   Rangkum N pesan terakhir (default 50) pakai AI.
 
+*Minigame RPG*
+/challenge @target
+  Tantang member lain buat battle 1v1. Cuma satu battle aktif per grup.
+/attack | /defend | /heal
+  Aksi giliran kamu di battle yang lagi jalan.
+  attack: pakai skill random (damage beda-beda, ada yang bawa efek: ☠️ racun, 💤 tidur, 🌀 bingung)
+  defend: kurangi 50% damage serangan berikutnya | heal: pulihkan HP.
+  Battle otomatis berakhir kalau 5 menit gak ada aksi dari siapa pun.
+
 *Lainnya*
 /help
   Tampilkan pesan ini.`;

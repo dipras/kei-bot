@@ -5,6 +5,8 @@ import { handleDeadline } from './deadline';
 import { handleAnggota } from './anggota';
 import { handleRangkum } from './rangkum';
 import { handleHelp } from './help';
+import { handleChallenge } from './challenge';
+import { handleAttack, handleDefend, handleHeal } from './battleAction';
 
 export async function routeCommand(msg: Message, chat: Chat, client: Client): Promise<void> {
   const raw = msg.body.trim();
@@ -26,6 +28,15 @@ export async function routeCommand(msg: Message, chat: Chat, client: Client): Pr
       return handleRangkum(msg, chat, argsStr, client);
     case '/help':
       return handleHelp(msg);
+    case '/challenge':
+    case '/challange':
+      return handleChallenge(msg, chat, client);
+    case '/attack':
+      return handleAttack(msg, chat);
+    case '/defend':
+      return handleDefend(msg, chat);
+    case '/heal':
+      return handleHeal(msg, chat);
     default:
       await msg.reply(`Command tidak dikenali: ${cmdRaw}\nKetik /help untuk lihat daftar command.`);
   }
