@@ -81,48 +81,149 @@ async function handleList(msg: Message, groupId: number): Promise<void> {
   await msg.reply(`📋 *Daftar Tugas*\n\n${body}`);
 }
 
-async function handleSelesai(msg: Message, groupId: number, argsStr: string): Promise<void> {
-  const id = parseInt(argsStr.trim(), 10);
-  if (!Number.isFinite(id)) {
-    await msg.reply('Gunakan: /tugas selesai <id>');
+const SELESAI_USAGE =
+  'Gunakan: /tugas selesai <id> [id2 id3 ...] | /tugas selesai semua';
+
+async function handleSelesaiSemua(msg: Message, groupId: number, senderId: string): Promise<void> {
+  const pending = listTasksByGroup(groupId).filter((t) => t.status === 'pending');
+  const eligible = pending.filter((t) => canModifyTask(senderId, t));
+
+  if (eligible.length === 0) {
+    await msg.reply('Tidak ada tugas pending yang bisa kamu tandai selesai.');
     return;
   }
-  const existing = getTaskById(groupId, id);
-  if (!existing) {
-    await msg.reply(`⚠️ Tugas #${id} tidak ditemukan.`);
+
+  for (const t of eligible) markSelesai(groupId, t.id);
+
+  const skipped = pending.length - eligible.length;
+  const skippedNote =
+    skipped > 0 ? `\n(${skipped} tugas lain dilewati karena bukan admin/punya kamu)` : '';
+  const idList = eligible.map((t) => `#${t.id}`).join(', ');
+  await msg.reply(`✅ ${eligible.length} tugas ditandai selesai: ${idList}${skippedNote}`);
+}
+
+async function handleSelesai(msg: Message, groupId: number, argsStr: string): Promise<void> {
+  const trimmed = argsStr.trim();
+  if (!trimmed) {
+    await msg.reply(SELESAI_USAGE);
     return;
   }
 
   const senderId = getSenderId(msg);
-  if (!canModifyTask(senderId, existing)) {
-    await msg.reply('❌ Hanya admin atau pembuat tugas ini yang boleh menandainya selesai.');
+
+  if (trimmed.toLowerCase() === 'semua') {
+    return handleSelesaiSemua(msg, groupId, senderId);
+  }
+
+  const ids = trimmed
+    .split(/[\s,]+/)
+    .filter(Boolean)
+    .map((s) => parseInt(s, 10));
+
+  if (ids.length === 0 || ids.some((id) => !Number.isFinite(id))) {
+    await msg.reply(SELESAI_USAGE);
     return;
   }
 
-  const updated = markSelesai(groupId, id);
-  await msg.reply(`✅ Tugas #${updated!.id} ditandai selesai: ${updated!.deskripsi}`);
+  const done: number[] = [];
+  const notFound: number[] = [];
+  const forbidden: number[] = [];
+
+  for (const id of ids) {
+    const existing = getTaskById(groupId, id);
+    if (!existing) {
+      notFound.push(id);
+      continue;
+    }
+    if (!canModifyTask(senderId, existing)) {
+      forbidden.push(id);
+      continue;
+    }
+    markSelesai(groupId, id);
+    done.push(id);
+  }
+
+  const lines: string[] = [];
+  if (done.length) lines.push(`✅ Ditandai selesai: ${done.map((i) => `#${i}`).join(', ')}`);
+  if (notFound.length)
+    lines.push(`⚠️ Tidak ditemukan: ${notFound.map((i) => `#${i}`).join(', ')}`);
+  if (forbidden.length)
+    lines.push(`❌ Bukan admin/pembuat tugas: ${forbidden.map((i) => `#${i}`).join(', ')}`);
+
+  await msg.reply(lines.join('\n'));
+}
+
+const HAPUS_USAGE = 'Gunakan: /tugas hapus <id> [id2 id3 ...] | /tugas hapus semua';
+
+async function handleHapusSemua(msg: Message, groupId: number, senderId: string): Promise<void> {
+  // Beda dengan /tugas selesai semua: hapus menyasar semua status (pending & selesai),
+  // bukan cuma yang pending, karena tujuannya bersih-bersih daftar tugas.
+  const all = listTasksByGroup(groupId);
+  const eligible = all.filter((t) => canModifyTask(senderId, t));
+
+  if (eligible.length === 0) {
+    await msg.reply('Tidak ada tugas yang bisa kamu hapus.');
+    return;
+  }
+
+  for (const t of eligible) deleteTask(groupId, t.id);
+
+  const skipped = all.length - eligible.length;
+  const skippedNote =
+    skipped > 0 ? `\n(${skipped} tugas lain dilewati karena bukan admin/punya kamu)` : '';
+  const idList = eligible.map((t) => `#${t.id}`).join(', ');
+  await msg.reply(`🗑️ ${eligible.length} tugas dihapus: ${idList}${skippedNote}`);
 }
 
 async function handleHapus(msg: Message, groupId: number, argsStr: string): Promise<void> {
-  const id = parseInt(argsStr.trim(), 10);
-  if (!Number.isFinite(id)) {
-    await msg.reply('Gunakan: /tugas hapus <id>');
-    return;
-  }
-  const existing = getTaskById(groupId, id);
-  if (!existing) {
-    await msg.reply(`⚠️ Tugas #${id} tidak ditemukan.`);
+  const trimmed = argsStr.trim();
+  if (!trimmed) {
+    await msg.reply(HAPUS_USAGE);
     return;
   }
 
   const senderId = getSenderId(msg);
-  if (!canModifyTask(senderId, existing)) {
-    await msg.reply('❌ Hanya admin atau pembuat tugas ini yang boleh menghapusnya.');
+
+  if (trimmed.toLowerCase() === 'semua') {
+    return handleHapusSemua(msg, groupId, senderId);
+  }
+
+  const ids = trimmed
+    .split(/[\s,]+/)
+    .filter(Boolean)
+    .map((s) => parseInt(s, 10));
+
+  if (ids.length === 0 || ids.some((id) => !Number.isFinite(id))) {
+    await msg.reply(HAPUS_USAGE);
     return;
   }
 
-  deleteTask(groupId, id);
-  await msg.reply(`🗑️ Tugas #${id} dihapus: ${existing.deskripsi}`);
+  const done: number[] = [];
+  const notFound: number[] = [];
+  const forbidden: number[] = [];
+
+  for (const id of ids) {
+    const existing = getTaskById(groupId, id);
+    if (!existing) {
+      notFound.push(id);
+      continue;
+    }
+    if (!canModifyTask(senderId, existing)) {
+      forbidden.push(id);
+      continue;
+    }
+    deleteTask(groupId, id);
+    done.push(id);
+  }
+
+  const lines: string[] = [];
+  if (done.length) lines.push(`🗑️ Dihapus: ${done.map((i) => `#${i}`).join(', ')}`);
+  if (notFound.length)
+    lines.push(`⚠️ Tidak ditemukan: ${notFound.map((i) => `#${i}`).join(', ')}`);
+  if (forbidden.length)
+    lines.push(`❌ Bukan admin/pembuat tugas: ${forbidden.map((i) => `#${i}`).join(', ')}`);
+
+  await msg.reply(lines.join('\n'));
 }
 
 export async function handleTugas(msg: Message, chat: Chat, argsStr: string): Promise<void> {
@@ -144,7 +245,7 @@ export async function handleTugas(msg: Message, chat: Chat, argsStr: string): Pr
       return handleHapus(msg, group.id, subArgsStr);
     default:
       await msg.reply(
-        'Subcommand tidak dikenali.\nGunakan: /tugas tambah | /tugas list | /tugas selesai <id> | /tugas hapus <id>'
+        'Subcommand tidak dikenali.\nGunakan: /tugas tambah | /tugas list | /tugas selesai <id...|semua> | /tugas hapus <id...|semua>'
       );
   }
 }

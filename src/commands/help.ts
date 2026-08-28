@@ -13,10 +13,16 @@ const HELP_TEXT = `🤖 *Kei-bot* — bantu koordinasi kelompok tugas kuliah
   Relatif: 1 jam, 2 jam, 1 hari, 2 hari, besok, lusa — contoh: /tugas tambah Kerjain ERD | besok
 /tugas list
   Lihat semua tugas, urut deadline terdekat.
-/tugas selesai <id>
-  Tandai tugas selesai (admin atau pembuat tugas itu sendiri).
-/tugas hapus <id>
-  Hapus tugas (admin atau pembuat tugas itu sendiri).
+/tugas selesai <id> [id2 id3 ...]
+  Tandai satu atau beberapa tugas selesai (admin atau pembuat tugas itu sendiri).
+  Contoh: /tugas selesai 3 5 7
+/tugas selesai semua
+  Tandai semua tugas pending yang boleh kamu ubah jadi selesai sekaligus.
+/tugas hapus <id> [id2 id3 ...]
+  Hapus satu atau beberapa tugas (admin atau pembuat tugas itu sendiri).
+  Contoh: /tugas hapus 3 5 7
+/tugas hapus semua
+  Hapus semua tugas (pending & selesai) yang boleh kamu hapus sekaligus.
 
 *Deadline*
 /deadline
