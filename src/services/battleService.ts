@@ -3,11 +3,11 @@ import { pickRandomSkill, type SkillEffect } from './battleSkills';
 const MAX_HP = 100;
 const TIMEOUT_MS = 5 * 60 * 1000;
 const HP_BAR_BLOCKS = 10;
-const MISS_CHANCE = 0.1;
-const CRIT_MULTIPLIER = 1.5;
+const MISS_CHANCE = 0.05;
+const CRIT_MULTIPLIER = 1.8;
 const DEFEND_REDUCTION = 0.5;
 
-const POISON_DAMAGE = 5;
+const POISON_DAMAGE = 8;
 const POISON_DURATION = 3; // giliran si korban sendiri
 const SLEEP_SKIP_TURNS = 1;
 const CONFUSE_DURATION = 2; // giliran si korban sendiri
@@ -37,6 +37,13 @@ export type ActionOutcome =
   | { ok: false; reason: 'not-participant' }
   | { ok: false; reason: 'not-your-turn'; currentTurnName: string }
   | { ok: true; log: string; finished: boolean };
+
+const METEOR_DAMAGE = 9999;
+
+export type MeteorOutcome =
+  | { ok: false; reason: 'no-battle' }
+  | { ok: false; reason: 'not-participant' }
+  | { ok: true; log: string };
 
 // State battle cuma hidup selama proses jalan (in-memory) — ini fitur hiburan sesaat,
 // bukan data yang perlu tahan restart kayak tugas di SQLite.
@@ -247,4 +254,37 @@ export function applyAction(
   logParts.push(`\n\n${hpLines}\n➡️ Giliran: ${nextTurnName}`);
 
   return { ok: true, log: logParts.join(''), finished: false };
+}
+
+/**
+ * Hidden command /meteor — gak didaftarkan di /help. Admin dapet insta-kill ke lawan
+ * (cheat code), non-admin ke-backfire ke diri sendiri. Sengaja gak peduli giliran siapa
+ * sekarang — ini "cheat", bukan aksi battle biasa.
+ */
+export function applyMeteor(groupId: string, senderId: string, isAdmin: boolean): MeteorOutcome {
+  const battle = activeBattles.get(groupId);
+  if (!battle) return { ok: false, reason: 'no-battle' };
+
+  const fighterIndex = battle.fighters.findIndex((f) => f.id === senderId) as 0 | 1 | -1;
+  if (fighterIndex === -1) return { ok: false, reason: 'not-participant' };
+
+  const self = battle.fighters[fighterIndex];
+  const opponent = battle.fighters[otherIndex(fighterIndex)];
+
+  clearTimeout(battle.timeout);
+  activeBattles.delete(groupId);
+
+  if (isAdmin) {
+    opponent.hp = Math.max(0, opponent.hp - METEOR_DAMAGE);
+    const log =
+      `☄️☄️☄️ *METEOR!* ☄️☄️☄️\n${self.name} manggil hujan meteor ke ${opponent.name}: -${METEOR_DAMAGE} HP!\n\n` +
+      `🏆 *${self.name} menang!* ${opponent.name} hancur lebur.`;
+    return { ok: true, log };
+  }
+
+  self.hp = Math.max(0, self.hp - METEOR_DAMAGE);
+  const log =
+    `☄️☄️☄️ *METEOR!* ☄️☄️☄️\n${self.name} mencoba memanggil meteor, tapi tololnya dia ikut terledakan jadi berkeping keping! -${METEOR_DAMAGE} HP!\n\n` +
+    `Gak ada yang menang, karena ada orang tolol manggil meteor gak mikir-mikir`;
+  return { ok: true, log };
 }
