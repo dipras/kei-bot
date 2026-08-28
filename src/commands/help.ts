@@ -12,7 +12,7 @@ const HELP_TEXT = `🤖 *Kei-bot* — bantu koordinasi kelompok tugas kuliah
 /tugas list
   Lihat semua tugas, urut deadline terdekat.
 /tugas selesai <id>
-  Tandai tugas selesai.
+  Tandai tugas selesai (admin atau pembuat tugas itu sendiri).
 /tugas hapus <id>
   Hapus tugas (admin atau pembuat tugas itu sendiri).
 

@@ -12,6 +12,10 @@ import {
 import type { TaskRow } from '../types';
 import { getRegisteredGroupOrReply, getSenderId } from './shared';
 
+function canModifyTask(senderId: string, task: TaskRow): boolean {
+  return isAdmin(senderId, config.adminNumbers) || normalizeNumber(senderId) === task.dibuat_oleh;
+}
+
 function formatTaskLine(task: TaskRow, now: Date): string {
   const statusEmoji = task.status === 'selesai' ? '✅' : '🕐';
   let deadlineInfo = '';
@@ -79,6 +83,13 @@ async function handleSelesai(msg: Message, groupId: number, argsStr: string): Pr
     await msg.reply(`⚠️ Tugas #${id} tidak ditemukan.`);
     return;
   }
+
+  const senderId = getSenderId(msg);
+  if (!canModifyTask(senderId, existing)) {
+    await msg.reply('❌ Hanya admin atau pembuat tugas ini yang boleh menandainya selesai.');
+    return;
+  }
+
   const updated = markSelesai(groupId, id);
   await msg.reply(`✅ Tugas #${updated!.id} ditandai selesai: ${updated!.deskripsi}`);
 }
@@ -96,9 +107,7 @@ async function handleHapus(msg: Message, groupId: number, argsStr: string): Prom
   }
 
   const senderId = getSenderId(msg);
-  const senderIsAdmin = isAdmin(senderId, config.adminNumbers);
-  const senderIsCreator = normalizeNumber(senderId) === existing.dibuat_oleh;
-  if (!senderIsAdmin && !senderIsCreator) {
+  if (!canModifyTask(senderId, existing)) {
     await msg.reply('❌ Hanya admin atau pembuat tugas ini yang boleh menghapusnya.');
     return;
   }
