@@ -9,7 +9,7 @@ export async function handleSetup(msg: Message, chat: Chat, argsStr: string): Pr
 
   const senderId = getSenderId(msg);
   if (!isAdmin(senderId, config.adminNumbers)) {
-    await msg.reply('❌ Hanya admin yang boleh menjalankan /setup.');
+    await msg.reply('Dih, siapa lo? najis. Cuma master Dipras yang boleh setting-setting aku 🥰');
     return;
   }
 
