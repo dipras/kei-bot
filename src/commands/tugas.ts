@@ -48,6 +48,15 @@ async function handleTambah(msg: Message, groupId: number, argsStr: string): Pro
       return;
     }
     deadlineIso = parsed.toISOString();
+
+    if(parsed.getTime() < Date.now()) {
+      if(isAdmin(getSenderId(msg), config.adminNumbers)) {
+        await msg.reply('Master, deadline harus lebih dari waktu sekaran yah. UwU');
+      } else {
+        await msg.reply('Ngotak goblok, mana bisa deadline lo set kemaren tolol');
+      }
+      return;
+    }
   }
 
   const senderId = getSenderId(msg);
