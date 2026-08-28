@@ -7,8 +7,10 @@ const HELP_TEXT = `🤖 *Kei-bot* — bantu koordinasi kelompok tugas kuliah
   Contoh: /setup Basis Data | Kelompok 3
 
 *Tugas*
-/tugas tambah <deskripsi> | <deadline DD-MM-YYYY HH:mm>
-  Deadline opsional. Contoh: /tugas tambah Kerjain ERD | 30-08-2026 23:59
+/tugas tambah <deskripsi> | <deadline>
+  Deadline opsional, bisa absolut atau relatif.
+  Absolut: DD-MM-YYYY HH:mm — contoh: /tugas tambah Kerjain ERD | 30-08-2026 23:59
+  Relatif: 1 jam, 2 jam, 1 hari, 2 hari, besok, lusa — contoh: /tugas tambah Kerjain ERD | besok
 /tugas list
   Lihat semua tugas, urut deadline terdekat.
 /tugas selesai <id>

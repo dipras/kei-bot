@@ -1,11 +1,35 @@
 const DEADLINE_RE = /^(\d{2})-(\d{2})-(\d{4})\s+(\d{2}):(\d{2})$/;
+const RELATIVE_HOUR_RE = /^(\d+)\s*jam$/i;
+const RELATIVE_DAY_RE = /^(\d+)\s*hari$/i;
+
+function addHours(date: Date, hours: number): Date {
+  return new Date(date.getTime() + hours * 60 * 60 * 1000);
+}
 
 /**
- * Parse format deadline v1: "DD-MM-YYYY HH:mm" (lihat PRD Open Question #2 —
- * format relatif seperti "besok" sengaja belum didukung di v1).
+ * Parse deadline dalam format absolut "DD-MM-YYYY HH:mm" atau format relatif
+ * ("1 jam", "2 hari", "besok", "lusa"). Format relatif dihitung dari `now`.
  */
-export function parseDeadline(raw: string): Date | null {
-  const match = DEADLINE_RE.exec(raw.trim());
+export function parseDeadline(raw: string, now: Date = new Date()): Date | null {
+  const trimmed = raw.trim();
+  const lower = trimmed.toLowerCase();
+
+  if (lower === 'besok') return addHours(now, 24);
+  if (lower === 'lusa') return addHours(now, 48);
+
+  const hourMatch = RELATIVE_HOUR_RE.exec(lower);
+  if (hourMatch) {
+    const n = Number(hourMatch[1]);
+    if (n > 0) return addHours(now, n);
+  }
+
+  const dayMatch = RELATIVE_DAY_RE.exec(lower);
+  if (dayMatch) {
+    const n = Number(dayMatch[1]);
+    if (n > 0) return addHours(now, n * 24);
+  }
+
+  const match = DEADLINE_RE.exec(trimmed);
   if (!match) return null;
 
   const [, dd, mm, yyyy, hh, min] = match;

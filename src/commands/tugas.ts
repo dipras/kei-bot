@@ -33,7 +33,7 @@ async function handleTambah(msg: Message, groupId: number, argsStr: string): Pro
 
   if (!deskripsi) {
     await msg.reply(
-      'Format salah.\nGunakan: /tugas tambah <deskripsi> | <deadline DD-MM-YYYY HH:mm>\nDeadline opsional. Contoh: /tugas tambah Kerjain ERD | 30-08-2026 23:59'
+      'Format salah.\nGunakan: /tugas tambah <deskripsi> | <deadline>\nDeadline opsional, bisa absolut (DD-MM-YYYY HH:mm) atau relatif (1 jam, 2 hari, besok, lusa).\nContoh: /tugas tambah Kerjain ERD | besok'
     );
     return;
   }
@@ -43,7 +43,7 @@ async function handleTambah(msg: Message, groupId: number, argsStr: string): Pro
     const parsed = parseDeadline(deadlineStr);
     if (!parsed) {
       await msg.reply(
-        '⚠️ Format deadline salah. Gunakan format: DD-MM-YYYY HH:mm\nContoh: 30-08-2026 23:59'
+        '⚠️ Format deadline salah.\nGunakan format absolut: DD-MM-YYYY HH:mm (contoh: 30-08-2026 23:59)\nAtau format relatif: 1 jam, 2 jam, 1 hari, 2 hari, besok, lusa'
       );
       return;
     }
